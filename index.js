@@ -6,56 +6,62 @@ const cheerio = require('cheerio')
 
 const app = express()
 const url = 'https://www.news24.com/news24/search?query=cassper+nyovest'
+const mainUrl = 'https://www.news24.com/news24'
 
 
-function normalArticle () {
+function normalArticle(url) {
+    axios(url)
+        .then((result) => {
+            const html = result.data
+            const $ = cheerio.load(html)
+            const articles = []
+            const mostRead = []
 
+            $('.article-item--container').each(function () {
+                const title = $(this).find('.article-item__title span').text()
+                const articleUrl = $(this).find('.article-item--container a').attr('href')
+                const imageUrl = $(this).find('.article-item__image img').attr('src')
+                const datePublished = $(this).find('.article-item__footer p').text()
+
+
+                articles.push({ title, articleUrl, imageUrl, datePublished })
+            })
+            $('.most-read-widget__tab').each(function () {
+                const title = $(this).find('.most-read-widget__title').text()
+                const articleUrl = $(this).find('li a').attr('href')
+
+                mostRead.push({ title, articleUrl })
+            })
+
+            return (articles, mostRead)
+            console.log(articles)
+        }).catch((err) => {
+            console.log("something went wrong: ", err);
+        });
 }
 
 function featuredArticles() {
-
-}
-
-axios(url)
-    .then((result) => {
+    axios(mainUrl).then((result) => {
         const html = result.data
         const $ = cheerio.load(html)
-        const articles = []
-        const mostRead = []
+
         const featured = []
 
-        $('.article-item--container').each(function () {
-            const title = $(this).find('.article-item__title span').text()
-            const articleUrl = $(this).find('.article-item--container a').attr('href')
-            const imageUrl = $(this).find('.article-item__image img').attr('src')
-            const datePublished = $(this).find('.article-item__footer p').text()
+        $('.featured').each(function () {
+            const title = $(this).find('.article-item--container .article-item__title').text()
+            const articleUrl = $(this).find('.article-item__title').attr('href')
 
-
-            articles.push({ title, articleUrl, imageUrl, datePublished })
-        })
-        $('.most-read-widget__tab').each(function () {
-            const title = $(this).find('.most-read-widget__title').text()
-            const articleUrl = $(this).find('li a').attr('href')
-
-            mostRead.push({ title, articleUrl })
-        })
-        $('.article-item--top-bar').each(function () {
-            const title = $(this).find('a').attr('href')
-            // const articleUrl = $(this).find('li a').attr('href')
-
-            featured.push({ title })
+            featured.push({ title, articleUrl })
         })
 
-        // $('.advsearchDiv').each(function() {
-        //     const select = $(this).find('select')
+        console.log(featured);
+        return (featured);
 
-        //     articles.push(select)
-        // })
-
-        console.log(featured)
-        // console.log(articles)
     }).catch((err) => {
-        console.log("something went wrong: ", err);
+        console.log("someething went wrong: ", err);
     });
+}
 
-// app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
+console.log(featuredArticles());
+
+app.listen(PORT, () => console.log(`<----------->exit<---------->`))
